@@ -37,6 +37,18 @@ class MemDB
           @original.new_matching(value)
         end
       end
+
+      def field_value(obj)
+        if obj[field].nil?
+          nil
+        else
+          @original.field_value(obj)
+        end
+      end
+
+      def prepare_query(obj)
+        @original.prepare_query(obj)
+      end
     end
   end
 end
