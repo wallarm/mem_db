@@ -52,4 +52,32 @@ RSpec.describe MemDB::Field::MayMissing do
     query: {category: "games"},
     expect: false
   }
+
+  context 'when decorate other field' do
+    let(:field) { described_class.new(MemDB::Field::Enum.new(:category).downcase) }
+
+    it_behaves_like "field", "field is missing", {
+      matching: {},
+      query: {category: "food"},
+      expect: true
+    }
+
+    it_behaves_like "field", "field is nil", {
+      matching: {category: nil},
+      query: {category: "food"},
+      expect: true
+    }
+
+    it_behaves_like "field", "exact single match", {
+      matching: {category: "food"},
+      query: {category: "food"},
+      expect: true
+    }
+
+    it_behaves_like "field", "exact single match by decorated value", {
+      matching: {category: "foOD"},
+      query: {category: "FOod"},
+      expect: true
+    }
+  end
 end
