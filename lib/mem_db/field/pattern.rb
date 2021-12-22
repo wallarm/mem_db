@@ -2,6 +2,7 @@
 
 require "mem_db/field"
 require "mem_db/field/matching"
+require "mem_db/regexp_engines/std"
 
 class MemDB
   module Field
@@ -12,11 +13,11 @@ class MemDB
         WILDCARD = "*"
 
         class Rx
-          def initialize(source)
-            parts = source.split(WILDCARD, -1).map { |part| ::Regexp.quote(part) }
+          def initialize(source, engine)
+            parts = source.split(WILDCARD, -1).map { |part| engine.quote(part) }
             parts[0] = "\\A#{parts[0]}"
             parts[-1] = "#{parts[-1]}\\z"
-            @rx = ::Regexp.new(parts.join(".*"), ::Regexp::MULTILINE)
+            @rx = engine.new(parts.join(".*"))
           end
 
           def match?(str)
@@ -54,19 +55,19 @@ class MemDB
           end
         end
 
-        def initialize(source)
+        def initialize(source, rx_engine:)
           wildcard_count = source.count(WILDCARD)
           @pat =
             if wildcard_count.zero?
               Exact.new(source)
             elsif wildcard_count > 1
-              Rx.new(source)
+              Rx.new(source, rx_engine)
             elsif source.end_with?(WILDCARD)
               Prefix.new(source[0..-2])
             elsif source.start_with?(WILDCARD)
               Suffix.new(source[1..-1])
             else # rubocop:disable Lint/DuplicateBranch
-              Rx.new(source)
+              Rx.new(source, rx_engine)
             end
         end
 
@@ -78,8 +79,8 @@ class MemDB
       class MultiMatching
         include MemDB::Field::Matching
 
-        def initialize(arr)
-          @patterns = arr.map { |source| Pattern.new(source) }
+        def initialize(arr, rx_engine:)
+          @patterns = arr.map { |source| Pattern.new(source, rx_engine: rx_engine) }
         end
 
         def match?(values)
@@ -90,8 +91,8 @@ class MemDB
       class SingleMatching
         include MemDB::Field::Matching
 
-        def initialize(el)
-          @pat = Pattern.new(el)
+        def initialize(el, rx_engine:)
+          @pat = Pattern.new(el, rx_engine: rx_engine)
         end
 
         def match?(values)
@@ -101,15 +102,16 @@ class MemDB
 
       attr_reader :field
 
-      def initialize(field)
+      def initialize(field, rx_engine: MemDB::RegexpEngines::Std)
         @field = field
+        @rx_engine = rx_engine
       end
 
       def new_matching(value)
         if value.is_a?(Array)
-          MultiMatching.new(value)
+          MultiMatching.new(value, rx_engine: @rx_engine)
         else
-          SingleMatching.new(value)
+          SingleMatching.new(value, rx_engine: @rx_engine)
         end
       end
     end
