@@ -3,8 +3,10 @@ AllCops:
   NewCops: enable
 
 Style/StringLiterals:
-  Enabled: true
-  EnforcedStyle: double_quotes
+  Enabled: false
+
+Style/QuotedSymbols:
+  Enabled: false
 
 Style/StringLiteralsInInterpolation:
   Enabled: true
