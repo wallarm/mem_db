@@ -2,30 +2,18 @@
 
 require "mem_db/field"
 require "mem_db/field/matching"
+require "mem_db/regexp_engines/std"
 
 class MemDB
   module Field
     class Regexp
       include MemDB::Field
 
-      class Rx
-        def initialize(source, ignore_case:)
-          opts = ::Regexp::MULTILINE
-          opts |= ::Regexp::IGNORECASE if ignore_case
-
-          @rx = ::Regexp.new(source, opts)
-        end
-
-        def match?(str)
-          @rx.match?(str)
-        end
-      end
-
       class MultiMatching
         include MemDB::Field::Matching
 
-        def initialize(arr, ignore_case:)
-          @patterns = arr.map { |source| Rx.new(source, ignore_case: ignore_case) }
+        def initialize(arr, rx_engine:, ignore_case:)
+          @patterns = arr.map { |source| rx_engine.new(source, ignore_case: ignore_case) }
         end
 
         def match?(values)
@@ -36,8 +24,8 @@ class MemDB
       class SingleMatching
         include MemDB::Field::Matching
 
-        def initialize(el, ignore_case:)
-          @pat = Rx.new(el, ignore_case: ignore_case)
+        def initialize(el, rx_engine:, ignore_case:)
+          @pat = rx_engine.new(el, ignore_case: ignore_case)
         end
 
         def match?(values)
@@ -47,16 +35,17 @@ class MemDB
 
       attr_reader :field
 
-      def initialize(field, ignore_case: false)
+      def initialize(field, rx_engine: MemDB::RegexpEngines::Std, ignore_case: false)
         @field = field
+        @rx_engine = rx_engine
         @ignore_case = ignore_case
       end
 
       def new_matching(value)
         if value.is_a?(Array)
-          MultiMatching.new(value, ignore_case: @ignore_case)
+          MultiMatching.new(value, rx_engine: @rx_engine, ignore_case: @ignore_case)
         else
-          SingleMatching.new(value, ignore_case: @ignore_case)
+          SingleMatching.new(value, rx_engine: @rx_engine, ignore_case: @ignore_case)
         end
       end
     end
