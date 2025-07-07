@@ -14,11 +14,11 @@ class MemDB
       end
 
       def map_value(str)
-        @original.map_value(str.downcase)
+        @original.map_value(str.to_s.downcase)
       end
 
       def map_query(str)
-        @original.map_query(str.downcase)
+        @original.map_query(str.to_s.downcase)
       end
     end
   end
