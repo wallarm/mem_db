@@ -23,10 +23,8 @@ class MemDB
       raise NotImplementedError, "#{self.class} has not implemented method '#{__method__}'"
     end
 
-    # rubocop:disable Lint/UnusedMethodArgument
     def query(_query, out: MemDB::Out.new)
       raise NotImplementedError, "#{self.class} has not implemented method '#{__method__}'"
     end
-    # rubocop:enable Lint/UnusedMethodArgument
   end
 end
